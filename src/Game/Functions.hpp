@@ -185,6 +185,7 @@ namespace Game
 	extern void Menus_OpenByName(const char* menuName, Game::UiContext *uiDC);
 	extern void Menus_CloseByName(const char* menuName, Game::UiContext *uiDC);
 	extern void Menus_CloseAll(Game::UiContext *uiDC);
+	extern void Item_Text_Paint(itemDef_s *a1 /*esi*/, UiContext *a2);
 	
 	// ---
 	// GSC 
