@@ -23,6 +23,7 @@ namespace Components
 		active.Command = true;
 		active.GScr_Methods = true;
 		active.QuickPatch = true;
+		active.MenuEdit = true;
 		active.PM_Movement = true;
 		active.XO_Console = true;
 		active.RB_DrawCollision = true;
@@ -41,6 +42,7 @@ namespace Components
 		REGISTER_MODULE(Command);
 		REGISTER_MODULE(GScr_Methods);
 		REGISTER_MODULE(QuickPatch);
+		REGISTER_MODULE(MenuEdit);
 		REGISTER_MODULE(PM_Movement);
 		REGISTER_MODULE(XO_Console);
 		REGISTER_MODULE(RB_DrawCollision);

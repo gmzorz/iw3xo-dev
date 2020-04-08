@@ -565,7 +565,6 @@ namespace Components
 	//Fixes rect not being drawn properly when a border is applied
 	_declspec(naked) void Window_Paint_Border_Side_Fix() {
 		const static uint32_t returnPT = 0x54B6FA;
-		const static float one = 1.0f;
 
 		_asm {
 			
@@ -801,6 +800,7 @@ namespace Components
 				jmp		stockScripts	// jump back and exec the original function
 		}
 	}
+
 
 	_UI::_UI()
 	{

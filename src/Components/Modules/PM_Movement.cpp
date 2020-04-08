@@ -2729,6 +2729,32 @@ namespace Components
 			Game::Dvar_FindVar("jump_slowdownenable")->current.enabled	= false;
 		});
 
+		Command::Add("savepos", [this](Command::Params) {
+			Game::scr_g_entities[1];
+			
+			Game::playerState_s* ps_loc = reinterpret_cast<Game::playerState_s*>(0x13255A8);
+			savedOrigin[0] = ps_loc->origin[0];
+			savedOrigin[1] = ps_loc->origin[1];
+			savedOrigin[2] = ps_loc->origin[2];
+			savedAngle[0] = ps_loc->viewangles[0];
+			savedAngle[1] = ps_loc->viewangles[1];
+			savedAngle[2] = ps_loc->viewangles[2];
+			positionSaved = true;
+			Game::Com_PrintMessage(0, Utils::VA("Angle (%f,%f,%f) saved.\n", savedAngle[0], savedAngle[1], savedAngle[2]), 0);
+			Game::Com_PrintMessage(0, Utils::VA("Origin (%f,%f,%f) saved.\n", ps_loc->origin[0], ps_loc->origin[1], ps_loc->origin[2]), 0);
+		});
+
+		Command::Add("loadpos", [this](Command::Params) {
+			if (!positionSaved) return;
+			Game::playerState_s* ps_loc = reinterpret_cast<Game::playerState_s*>(0x13255A8);
+			ps_loc->origin[0] = savedOrigin[0];
+			ps_loc->origin[1] = savedOrigin[1];
+			ps_loc->origin[2] = savedOrigin[2];
+			Game::G_SetAngles(&Game::scr_g_entities[0], savedAngle);
+			Game::Com_PrintMessage(0, Utils::VA("Angle (%f,%f,%f) Loaded.\n", savedAngle[0], savedAngle[1], savedAngle[2]), 0);
+			Game::Com_PrintMessage(0, Utils::VA("Origin (%f,%f,%f) loaded.\n", ps_loc->origin[0], ps_loc->origin[1], ps_loc->origin[2]), 0);
+		});
+
 		// -----
 		// Hooks
 

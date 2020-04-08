@@ -16,6 +16,7 @@ namespace Components
 		bool Command;
 		bool GScr_Methods;
 		bool QuickPatch;
+		bool MenuEdit;
 		bool PM_Movement;
 		bool XO_Console;
 		bool RB_DrawCollision;
@@ -72,6 +73,7 @@ namespace Components
 #include "Modules/RB_DrawCollision.hpp"
 #include "Modules/RB_ShaderOverlays.hpp"
 #include "Modules/RadiantRemote.hpp"
+#include "Modules/MenuEdit.hpp"
 
 // General Modules with dynamic hooks depending on addon component loading
 #include "Modules/Scheduler.hpp"
