@@ -74,3 +74,4 @@ user*.bat
 *.til
 iw3x.dll
 assets/iw3mp.exe
+src/version.hpp
