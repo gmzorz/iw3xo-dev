@@ -11,9 +11,12 @@ namespace Components
 	int MenuEdit::selectedMenuDef = 0;
 	int MenuEdit::selectedItemDef = -1;
 	bool MenuEdit::leftMouseDown = false;
+	bool MenuEdit::rightMouseDown = false;
 	int MenuEdit::snapGrid = 0;
+	glm::vec2 MenuEdit::mousePos;
 	glm::vec2 MenuEdit::oldMousePos;
 	glm::vec2 MenuEdit::snapPos;
+	ContextMenu *MenuEdit::contextMenu = new ContextMenu();
 	MenuEdit::MenuEdit()
 	{
 		
@@ -40,6 +43,8 @@ namespace Components
 					break;
 				}	
 			}
+
+			contextMenu->setAlign(getCurrentMenuDef()->window.rectClient.horzAlign, getCurrentMenuDef()->window.rectClient.horzAlign, getCurrentMenuDef()->window.rectClient.x, getCurrentMenuDef()->window.rectClient.y);
 
 			Game::Key_SetCatcher();
 			Game::Menus_CloseAll(Game::_uiContext);
@@ -103,21 +108,14 @@ namespace Components
 		Called when mouse enters a itemdef
 	*/
 	void MenuEdit::MouseEnteredItemDef(Game::itemDef_s *itemDef) {
-
-		if (Game::playerKeys->keys[KEYCATCHER_MOUSE1].down) {
-
-			if (!leftMouseDown) {
-				for (int i = 0; i < itemDef->parent->itemCount; i++) {
-					if (itemDef->parent->items[i] == itemDef) {
-						selectedItemDef = i;
-						break;
-					}
+		if (!leftMouseDown) {
+			for (int i = 0; i < itemDef->parent->itemCount; i++) {
+				if (itemDef->parent->items[i] == itemDef) {
+					selectedItemDef = i;
+					break;
 				}
-				leftMouseDown = true;
 			}
-
 		}
-
 	}
 
 	/*
@@ -125,7 +123,7 @@ namespace Components
 	*/
 	void MenuEdit::MouseMove() {
 
-		glm::vec2 mousePos(Game::_uiContext->cursor.x, Game::_uiContext->cursor.y);
+		mousePos = glm::vec2(Game::_uiContext->cursor.x, Game::_uiContext->cursor.y);
 		Game::rectDef_s *rect = &Game::_uiContext->Menus[selectedMenuDef]->items[selectedItemDef]->window.rectClient;
 
 
@@ -175,16 +173,16 @@ namespace Components
 	//might add menu being painted? Change to draw after menu is painted so its on top
 	void MenuEdit::MenuPaint() {
 
-
-		if (selectedItemDef != -1) {
-			float colour[] = { 1,1,0,1 };
-
-			//top left
-
-			//top right
-			
+		if (!Game::Sys_IsMainThread())
+		{
+			return;
 		}
 
+
+		if (Game::playerKeys->keys[KEYCATCHER_MOUSE1].down) {
+			leftMouseDown = true;
+			//selectedItemDef = -1;
+		}
 
 		if (!Game::playerKeys->keys[KEYCATCHER_MOUSE1].down) {
 			if (leftMouseDown) {
@@ -194,6 +192,22 @@ namespace Components
 			leftMouseDown = false;
 			selectedItemDef = -1;
 		}
+
+		if (Game::playerKeys->keys[KEYCATCHER_MOUSE2].down) {
+			if (contextMenu->isOpen) {
+				contextMenu->close();
+			}
+			contextMenu->open(mousePos.x, mousePos.y);
+
+			rightMouseDown = true;
+		}
+
+		if (!Game::playerKeys->keys[KEYCATCHER_MOUSE2].down) {
+			rightMouseDown = false;
+		}
+
+		contextMenu->render();
+
 
 	}
 
@@ -212,6 +226,7 @@ namespace Components
 
 	MenuEdit::~MenuEdit()
 	{
+		delete contextMenu;
 	}
 
 }

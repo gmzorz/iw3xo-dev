@@ -75,3 +75,4 @@ user*.bat
 iw3x.dll
 assets/iw3mp.exe
 src/version.hpp
+src/version.hpp

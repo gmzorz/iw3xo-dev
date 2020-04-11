@@ -1,11 +1,9 @@
 #pragma once
-
+#include "Utils/ContextMenu.hpp"
 
 namespace Components
 {
-	
-
-	
+		
 	class MenuEdit : public Component
 	{
 	public:
@@ -19,9 +17,12 @@ namespace Components
 		static int selectedMenuDef;
 		static int selectedItemDef;
 		static bool leftMouseDown;
+		static bool rightMouseDown;
 		static int snapGrid;
+		static glm::vec2 mousePos;
 		static glm::vec2 oldMousePos;
 		static glm::vec2 snapPos;
+		static ContextMenu *contextMenu;
 
 		static void MouseEnterItemHook();
 		static void MouseMoveHook();
@@ -33,6 +34,8 @@ namespace Components
 
 		static Game::itemDef_s* getCurrectItemDef();
 		static Game::menuDef_t* getCurrentMenuDef();
+
+
 	};
 }
 
