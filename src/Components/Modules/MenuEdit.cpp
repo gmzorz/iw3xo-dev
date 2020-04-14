@@ -17,10 +17,23 @@ namespace Components
 	glm::vec2 MenuEdit::oldMousePos;
 	glm::vec2 MenuEdit::snapPos;
 	ContextMenu *MenuEdit::contextMenu = new ContextMenu();
+	float MenuEdit::selectColour[4];
 	MenuEdit::MenuEdit()
 	{
 		
+		selectColour[0] = 1.0f;
+		selectColour[1] = 1.0f;
+		selectColour[2] = 1.0f;
+		selectColour[3] = 1.0f;
 
+		contextMenu->addButton("Button 1", [this]() {
+			if (selectedItemDef != -1) {
+				getCurrectItemDef()->window.backColor[0] = 0.0f;
+				getCurrectItemDef()->window.backColor[1] = 0.0f;
+				getCurrectItemDef()->window.backColor[2] = 1.0f;
+				getCurrectItemDef()->window.backColor[3] = 1.0f;
+			}
+		});
 
 		//Add commands
 		Command::Add("menuedit", [this](Command::Params) {	
@@ -61,8 +74,8 @@ namespace Components
 		Utils::Hook(0x554DEA, MouseMoveHook, HOOK_JUMP).install()->quick();
 
 		//hook in MenuPaint function
-		Utils::Hook::Nop(0x55489C, 5);
-		Utils::Hook(0x55489C, MenuPaintHook, HOOK_JUMP).install()->quick();
+		Utils::Hook::Nop(0x55494A, 5);
+		Utils::Hook(0x55494A, MenuPaintHook, HOOK_JUMP).install()->quick();
 	
 
 	}
@@ -94,11 +107,12 @@ namespace Components
 		}
 	}
 
+	//Hook at end of menuPaint func
 	_declspec(naked) void MenuEdit::MenuPaintHook() {
-		const static uint32_t returnPT = 0x5548A1;
-		const static uint32_t ui_showMenuOnly = 0x558CF0;
+		const static uint32_t returnPT = 0x55494F;
+		const static uint32_t Item_Paint = 0x553C20;
 		_asm {
-			call	ui_showMenuOnly
+			call	Item_Paint
 			call	MenuPaint
 			jmp		returnPT
 		}
@@ -126,51 +140,50 @@ namespace Components
 		mousePos = glm::vec2(Game::_uiContext->cursor.x, Game::_uiContext->cursor.y);
 		Game::rectDef_s *rect = &Game::_uiContext->Menus[selectedMenuDef]->items[selectedItemDef]->window.rectClient;
 
-
-
 		if (leftMouseDown) {
 
-			if (selectedItemDef != -1) {
+			//dont drag if mouse is over context menu
+			if (!contextMenu->mouseIntersects()) {
+				if (selectedItemDef != -1) {
 
-				if (snapGrid == 0) {
-					float distancex = Game::_uiContext->cursor.x - oldMousePos.x;
-					float distancey = Game::_uiContext->cursor.y - oldMousePos.y;
-					rect->x += distancex;
-					rect->y += distancey;
+					if (snapGrid == 0) {
+						float distancex = Game::_uiContext->cursor.x - oldMousePos.x;
+						float distancey = Game::_uiContext->cursor.y - oldMousePos.y;
+						rect->x += distancex;
+						rect->y += distancey;
 
+					}
+					else {
+						if (mousePos.x - snapPos.x >= snapGrid) {
+							float newX = rect->x + snapGrid;
+							rect->x = ceil(newX / snapGrid)*snapGrid;
+							snapPos.x = mousePos.x;
+						}
+						if (mousePos.x - snapPos.x <= -snapGrid) {
+							float newX = rect->x - snapGrid;
+							rect->x = ceil(newX / snapGrid)*snapGrid;
+							snapPos.x = mousePos.x;
+						}
+						if (mousePos.y - snapPos.y >= snapGrid) {
+							float newY = rect->y + snapGrid;
+							rect->y = ceil(newY / snapGrid)*snapGrid;
+							snapPos.y = mousePos.y;
+						}
+						if (mousePos.y - snapPos.y <= -snapGrid) {
+							float newY = rect->y - snapGrid;
+							rect->y = ceil(newY / snapGrid)*snapGrid;
+							snapPos.y = mousePos.y;
+						}
+					}
 				}
-				else {
-					if (mousePos.x - snapPos.x >= snapGrid) {
-						float newX = rect->x + snapGrid;
-						rect->x = ceil(newX / snapGrid)*snapGrid;
-						snapPos.x = mousePos.x;
-					}
-					if (mousePos.x - snapPos.x <= -snapGrid) {
-						float newX = rect->x - snapGrid;
-						rect->x = ceil(newX / snapGrid)*snapGrid;
-						snapPos.x = mousePos.x;
-					}
-					if (mousePos.y - snapPos.y >= snapGrid) {
-						float newY = rect->y + snapGrid;
-						rect->y = ceil(newY / snapGrid)*snapGrid;
-						snapPos.y = mousePos.y;
-					}
-					if (mousePos.y - snapPos.y <= -snapGrid) {
-						float newY = rect->y - snapGrid;
-						rect->y = ceil(newY / snapGrid)*snapGrid;
-						snapPos.y = mousePos.y;
-					}
-				}
-			}
-
+			}		
 		}
 
 		oldMousePos.x = Game::_uiContext->cursor.x;
 		oldMousePos.y = Game::_uiContext->cursor.y;
-
 	}
 
-	//might add menu being painted? Change to draw after menu is painted so its on top
+	//might add menu being painted?
 	void MenuEdit::MenuPaint() {
 
 		if (!Game::Sys_IsMainThread())
@@ -178,8 +191,22 @@ namespace Components
 			return;
 		}
 
-
 		if (Game::playerKeys->keys[KEYCATCHER_MOUSE1].down) {
+			if (contextMenu->isOpen) {
+				if (!contextMenu->mouseIntersects()) {
+					contextMenu->close();
+				}
+				else {
+					for (int i = 0; i < contextMenu->buttons->size(); i++) {
+						if (contextMenu->buttons->at(i)->mouseIntersects()) {
+							drawDebug(10, 50, "hover");
+							contextMenu->buttons->at(i)->click();
+						}
+					}
+				}
+
+			}
+
 			leftMouseDown = true;
 			//selectedItemDef = -1;
 		}
@@ -190,14 +217,17 @@ namespace Components
 			}
 
 			leftMouseDown = false;
-			selectedItemDef = -1;
+			//selectedItemDef = -1;
 		}
 
 		if (Game::playerKeys->keys[KEYCATCHER_MOUSE2].down) {
-			if (contextMenu->isOpen) {
-				contextMenu->close();
+
+			if (!contextMenu->mouseIntersects()) {
+				if (contextMenu->isOpen) {
+					contextMenu->close();
+				}
+				contextMenu->open(mousePos.x, mousePos.y);
 			}
-			contextMenu->open(mousePos.x, mousePos.y);
 
 			rightMouseDown = true;
 		}
@@ -206,12 +236,47 @@ namespace Components
 			rightMouseDown = false;
 		}
 
+		//drawItemDefSelect();
 		contextMenu->render();
 
 
+		
 	}
 
+	void MenuEdit::drawItemDefSelect() {
+		if (selectedItemDef == -1) {
+			return;
+		}
 
+		float xPos, yPos, width, height;
+
+		//top left
+		xPos = getCurrectItemDef()->window.rectClient.x;// -10;
+		yPos = getCurrectItemDef()->window.rectClient.y - 10;
+		width = getCurrectItemDef()->window.rectClient.w;// +10;
+		height = 5.0f;
+
+		
+		drawDebug(10, 50, Utils::VA("xPos: %f", xPos));
+
+		//xPos = Components::_UI::ScrPlace_ApplyX(getCurrentMenuDef()->window.rectClient.horzAlign, xPos, 0);
+
+		if (getCurrentMenuDef()->window.rectClient.horzAlign == 0) {
+			xPos += (float)(Game::_uiContext->screenWidth - 640) / 2;
+		}
+		drawDebug(10, 70, Utils::VA("Mousex: %f", Game::_uiContext->cursor.x));
+
+
+		//adjustPosition(&xPos, &yPos, &width, &height);
+		Game::ConDraw_Box(selectColour, xPos, yPos, width, height);
+	}
+
+	void MenuEdit::adjustPosition(float *x, float *y, float *w, float *h) {
+		*x = Utils::floatToRange(0.0f, 640, 0.0f, (float)Game::_uiContext->screenWidth, *x);
+		*y = Utils::floatToRange(0.0f, 480, 0.0f, (float)Game::_uiContext->screenHeight, *y);
+		*w = Utils::floatToRange(0.0f, 640, 0.0f, (float)Game::_uiContext->screenWidth, *w);
+		*h = Utils::floatToRange(0.0f, 480, 0.0f, (float)Game::_uiContext->screenHeight, *h);
+	}
 
 	Game::itemDef_s* MenuEdit::getCurrectItemDef() {
 		return getCurrentMenuDef()->items[selectedItemDef];
@@ -219,6 +284,12 @@ namespace Components
 
 	Game::menuDef_t* MenuEdit::getCurrentMenuDef() {
 		return Game::_uiContext->Menus[selectedMenuDef];
+	}
+
+	void MenuEdit::drawDebug(float x, float y, const char *s) {
+		void* fontHandle = Game::R_RegisterFont(FONT_NORMAL, sizeof(FONT_NORMAL));
+		float colorBackground[4] = { 1.0f, 0.2f, 0.2f, 1.0f };
+		Game::R_AddCmdDrawTextASM(s, 0x7FFFFFFF, fontHandle, x, y, 1.4, 1.4, 0, colorBackground, 0);
 	}
 
 
