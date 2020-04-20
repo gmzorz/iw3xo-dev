@@ -21,18 +21,29 @@ namespace Components
 	MenuEdit::MenuEdit()
 	{
 		
-		selectColour[0] = 1.0f;
-		selectColour[1] = 1.0f;
-		selectColour[2] = 1.0f;
+		selectColour[0] = 0.0f;
+		selectColour[1] = 0.0f;
+		selectColour[2] = 0.0f;
 		selectColour[3] = 1.0f;
 
-		contextMenu->addButton("Button 1", [this]() {
+		contextMenu->addButton("Background Colour", [this]() {
 			if (selectedItemDef != -1) {
 				getCurrectItemDef()->window.backColor[0] = 0.0f;
 				getCurrectItemDef()->window.backColor[1] = 0.0f;
-				getCurrectItemDef()->window.backColor[2] = 1.0f;
+				getCurrectItemDef()->window.backColor[2] = 0.0f;
 				getCurrectItemDef()->window.backColor[3] = 1.0f;
 			}
+		});
+
+		contextMenu->addButton("Border Style", [this]() {
+			if (selectedItemDef != -1) {
+				int border = getCurrectItemDef()->window.border;
+				getCurrectItemDef()->window.border = border == 0 ? 1 : border == 1 ? 2 : border == 2 ? 3 : border == 3 ? 5 : border == 5 ? 6 : 0;
+			}
+		});
+
+		contextMenu->addButton("Button 3", [this]() {
+
 		});
 
 		//Add commands
@@ -196,28 +207,25 @@ namespace Components
 				if (!contextMenu->mouseIntersects()) {
 					contextMenu->close();
 				}
-				else {
-					for (int i = 0; i < contextMenu->buttons->size(); i++) {
-						if (contextMenu->buttons->at(i)->mouseIntersects()) {
-							drawDebug(10, 50, "hover");
-							contextMenu->buttons->at(i)->click();
-						}
-					}
-				}
-
 			}
 
 			leftMouseDown = true;
-			//selectedItemDef = -1;
 		}
 
 		if (!Game::playerKeys->keys[KEYCATCHER_MOUSE1].down) {
 			if (leftMouseDown) {
-
+				if (contextMenu->isOpen) {
+					if (contextMenu->mouseIntersects()) {
+						for (int i = 0; i < contextMenu->buttons->size(); i++) {
+							if (contextMenu->buttons->at(i)->mouseIntersects()) {
+								contextMenu->buttons->at(i)->click();
+							}
+						}
+					}
+				}
 			}
 
 			leftMouseDown = false;
-			//selectedItemDef = -1;
 		}
 
 		if (Game::playerKeys->keys[KEYCATCHER_MOUSE2].down) {
@@ -236,10 +244,10 @@ namespace Components
 			rightMouseDown = false;
 		}
 
-		//drawItemDefSelect();
+
+
+		drawItemDefSelect();
 		contextMenu->render();
-
-
 		
 	}
 
@@ -248,34 +256,43 @@ namespace Components
 			return;
 		}
 
-		float xPos, yPos, width, height;
+		float xPos, yPos, width, height, offset = 10, lineSize = 5;
 
 		//top left
 		xPos = getCurrectItemDef()->window.rectClient.x;// -10;
-		yPos = getCurrectItemDef()->window.rectClient.y - 10;
+		yPos = getCurrectItemDef()->window.rectClient.y; //- 10;
 		width = getCurrectItemDef()->window.rectClient.w;// +10;
-		height = 5.0f;
+		height = getCurrectItemDef()->window.rectClient.h;
 
 		
 		drawDebug(10, 50, Utils::VA("xPos: %f", xPos));
 
 		//xPos = Components::_UI::ScrPlace_ApplyX(getCurrentMenuDef()->window.rectClient.horzAlign, xPos, 0);
 
-		if (getCurrentMenuDef()->window.rectClient.horzAlign == 0) {
-			xPos += (float)(Game::_uiContext->screenWidth - 640) / 2;
-		}
-		drawDebug(10, 70, Utils::VA("Mousex: %f", Game::_uiContext->cursor.x));
+		//if (getCurrentMenuDef()->window.rectClient.horzAlign == 0) {
+			//xPos += (float)(Game::_uiContext->screenWidth - 640) / 2;
+		//}
+		drawDebug(10, 70, Utils::VA("Mousex: %f", (float)(Game::_uiContext->screenWidth - 640) / 2));
 
 
-		//adjustPosition(&xPos, &yPos, &width, &height);
-		Game::ConDraw_Box(selectColour, xPos, yPos, width, height);
+		xPos += (float)(Game::_uiContext->screenWidth - 640) / 2;
+
+		adjustPosition(&xPos, &yPos, &width, &height);
+		//xPos += (float)(Game::_uiContext->screenWidth - 640) / 2;
+
+		
+
+		//top
+		Game::ConDraw_Box(selectColour, xPos - offset, yPos - offset, width + (offset*2), lineSize);
+		//bottom
+		Game::ConDraw_Box(selectColour, xPos - offset, yPos + height + offset, width + offset, lineSize);
 	}
 
 	void MenuEdit::adjustPosition(float *x, float *y, float *w, float *h) {
-		*x = Utils::floatToRange(0.0f, 640, 0.0f, (float)Game::_uiContext->screenWidth, *x);
-		*y = Utils::floatToRange(0.0f, 480, 0.0f, (float)Game::_uiContext->screenHeight, *y);
-		*w = Utils::floatToRange(0.0f, 640, 0.0f, (float)Game::_uiContext->screenWidth, *w);
-		*h = Utils::floatToRange(0.0f, 480, 0.0f, (float)Game::_uiContext->screenHeight, *h);
+		*x = Utils::floatToRange(0.0f, STANDARD_WIDTH, 0.0f, (float)Game::_uiContext->screenWidth - (float)(Game::_uiContext->screenWidth - 640) / 2, *x);
+		*y = Utils::floatToRange(0.0f, STANDARD_HEIGHT, 0.0f, (float)Game::_uiContext->screenHeight, *y);
+		*w = Utils::floatToRange(0.0f, STANDARD_WIDTH, 0.0f, (float)Game::_uiContext->screenWidth, *w);
+		*h = Utils::floatToRange(0.0f, STANDARD_HEIGHT, 0.0f, (float)Game::_uiContext->screenHeight, *h);
 	}
 
 	Game::itemDef_s* MenuEdit::getCurrectItemDef() {

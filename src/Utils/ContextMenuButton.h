@@ -9,14 +9,15 @@ public:
 	void render();
 	glm::vec2 position;
 	float width;
-	float buttonColour[4];
-	float buttonHeight;
+	
+	static float buttonHeight;
 	void click();
 	bool mouseIntersects();
 
 private:
 	float textColor[4];
 	const char *text;
+	float buttonColour[4];
 	std::function<void()> function;
 
 

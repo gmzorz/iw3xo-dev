@@ -29,7 +29,6 @@ private:
 	float height = 0;
 	float drawWidth = 0;
 	float drawHeight = 0;
-	float backgroundColour[4];
 	
 };
 

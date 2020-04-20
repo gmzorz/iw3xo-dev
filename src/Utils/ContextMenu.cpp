@@ -7,13 +7,8 @@ ContextMenu::ContextMenu()
 	alignH = 0;
 	alignV = 0;
 
-	backgroundColour[0] = (float)77/255;
-	backgroundColour[1] = (float)77/255;
-	backgroundColour[2] = (float)77/255;
-	backgroundColour[3] = 1.0f;
-
 	width = 100.0f;
-	height = 200.0f;
+	height = 0.0f;
 
 	buttons = new std::vector<ContextMenuButton*>;
 }
@@ -73,11 +68,11 @@ void ContextMenu::render() {
 		drawWidth = Utils::floatToRange(0.0f, STANDARD_WIDTH, 0.0f, (float)Game::_uiContext->screenWidth, width);
 		drawHeight = Utils::floatToRange(0.0f, STANDARD_HEIGHT, 0.0f, (float)Game::_uiContext->screenHeight, height);
 
-		Game::ConDraw_Box(backgroundColour, drawPosition.x, drawPosition.y, drawWidth, drawHeight);
+		//Game::ConDraw_Box(backgroundColour, drawPosition.x, drawPosition.y, drawWidth, drawHeight);
 		
 
 		for (int i = 0; i < buttons->size(); i++) {
-			(*buttons)[i]->setPosition(pos.x, pos.y, width);
+			(*buttons)[i]->setPosition(pos.x, pos.y + (i*ContextMenuButton::buttonHeight), width);
 			(*buttons)[i]->render();
 		}
 	}
@@ -85,5 +80,6 @@ void ContextMenu::render() {
 }
 
 void ContextMenu::addButton(const char *text, const std::function<void()> &func) {
+	height += ContextMenuButton::buttonHeight;
 	buttons->push_back(new ContextMenuButton(text, func));
 }
